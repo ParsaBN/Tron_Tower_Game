@@ -5,18 +5,32 @@ var value = 0;
 var towerCoords = [];
 var walls = [];
 
+var panX = 0
+var panY = 0
+var translationX = 0
+var translationY = 0
+var zoom = 1
 
+const ZOOM_SENSITIVITY = 100
+const PAN_SENSITIVITY = 1
 
 function setup() {
   cnv = createCanvas(window_width, window_length);
   cnv.mouseClicked(getCoords);
   strokeWeight(0.5)
+
+  document.getElementById("defaultCanvas0").onwheel = (event) => event.preventDefault()
+  document.getElementById("defaultCanvas0").onmousewheel = (event) => event.preventDefault()
 }
 
-function draw() {
+function draw() {  
   let highlight_orange = color(255, 204, 0);
   let neon_blue = color(80,90,255);
   let neon_orange = color(255, 153, 51);
+
+  translate(Math.round(translationX), Math.round(translationY))
+  scale(zoom)
+
   background(value);
   stroke(255)
   for (var i=0; i <= window_width; i+=step) {
@@ -41,6 +55,21 @@ function draw() {
     rect(towerCoords[0][0], towerCoords[0][1], step, step)
   }
 
+}
+
+function mouseWheel(event) {
+  // if the deltas are decimals then it is a zoom event
+  if (event.deltaX % 1 == 0 && event.deltaY % 1 == 0) {
+    panX -= event.deltaX * PAN_SENSITIVITY
+    panY -= event.deltaY * PAN_SENSITIVITY
+  }
+  else {
+    zoom *= 1 - event.delta / ZOOM_SENSITIVITY
+    // zoom = max(min(zoom, 2), 1)
+  }
+
+  translationX = (panX - (window_width / 2)) * zoom + (window_width / 2);
+  translationY = (panY - (window_length / 2)) * zoom + (window_length / 2);
 }
 
 function getCoords() {
