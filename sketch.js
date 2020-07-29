@@ -21,9 +21,10 @@ var panY = 0
 var translationX = 0
 var translationY = 0
 var zoom = 1
+zoom = 0.99
 
 const ZOOM_SENSITIVITY = 100
-const PAN_SENSITIVITY = 1
+const PAN_SENSITIVITY = 0.9
 
 function setup() {
   cnv = createCanvas(window_width, window_length);
@@ -40,6 +41,7 @@ function draw() {
   let neon_orange = color(255, 153, 51);
   let light_blue = color(111, 255, 232);
 
+  push()
   translate(Math.round(translationX), Math.round(translationY))
   scale(zoom)
 
@@ -97,6 +99,7 @@ function draw() {
     triangle(tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5])
   }
 
+  pop()
   fill(0);
   stroke(255);
   strokeWeight(2);
@@ -117,12 +120,12 @@ function draw() {
 function mouseWheel(event) {
   // if the deltas are decimals then it is a zoom event
   if (event.deltaX % 1 == 0 && event.deltaY % 1 == 0) {
-    panX -= event.deltaX * PAN_SENSITIVITY
-    panY -= event.deltaY * PAN_SENSITIVITY
+    panX -= event.deltaX * PAN_SENSITIVITY / zoom
+    panY -= event.deltaY * PAN_SENSITIVITY / zoom
   }
   else {
     zoom *= 1 - event.delta / ZOOM_SENSITIVITY
-    // zoom = max(min(zoom, 2), 1)
+    zoom = max(min(zoom, 2), 1)
   }
 
   translationX = (panX - (window_width / 2)) * zoom + (window_width / 2);
