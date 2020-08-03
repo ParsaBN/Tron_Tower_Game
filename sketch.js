@@ -3,14 +3,12 @@ let window_length = 500;
 let step = 20;
 var value = 0;
 
-
 var towerCoords = [];
 var tower_coin_count = 0;
 let tower_center_x;
 let tower_center_y;
 var tower_triangle_coords;
 var tower_triangle_display = false;
-
 
 var walls = [];
 let bits = 50;
@@ -19,10 +17,22 @@ let userLevel = 26;
 let bits_img;
 
 
+var panX = 0
+var panY = 0
+var translationX = 0
+var translationY = 0
+var zoom = 1
+zoom = 0.99
+
+const ZOOM_SENSITIVITY = 100
+const PAN_SENSITIVITY = 0.9
 
 function setup() {
   cnv = createCanvas(window_width, window_length);
   cnv.mouseClicked(checkCoords);
+
+  document.getElementById("defaultCanvas0").onwheel = (event) => event.preventDefault()
+  document.getElementById("defaultCanvas0").onmousewheel = (event) => event.preventDefault()
 }
 
 function draw() {
@@ -31,6 +41,11 @@ function draw() {
   let neon_blue = color(80,90,255);
   let neon_orange = color(255, 153, 51);
   let light_blue = color(111, 255, 232);
+
+  push()
+  translate(Math.round(translationX), Math.round(translationY))
+  scale(zoom)
+
   background(value);
   strokeWeight(0.5)
   stroke(255)
@@ -52,8 +67,11 @@ function draw() {
     rect(walls[i][0], walls[i][1], step, step)
   }
 
-  var x_coord = Math.floor(mouseX / step)*step
-  var y_coord = Math.floor(mouseY / step)*step
+  var worldMousePositionX = mouseX / zoom - translationX / zoom
+  var worldMousePositionY = mouseY / zoom - translationY / zoom
+
+  var x_coord = Math.floor(worldMousePositionX / step)*step
+  var y_coord = Math.floor(worldMousePositionY / step)*step
   fill(highlight_orange);
 
   if (towerCoords.length <= 0) {
@@ -62,7 +80,7 @@ function draw() {
     if (tower_triangle_display === false) {
       rect(x_coord, y_coord, step, step)
     } else {
-      if (trianCollision(mouseX, mouseY, tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5]) === false) {
+      if (trianCollision(worldMousePositionX, worldMousePositionY, tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5]) === false) {
         rect(x_coord, y_coord, step, step)
       } else {
         strokeWeight(4);
@@ -81,6 +99,7 @@ function draw() {
     triangle(tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5])
   }
 
+  pop()
   fill(0);
   stroke(255);
   strokeWeight(2);
@@ -98,16 +117,32 @@ function draw() {
 
 }
 
+function mouseWheel(event) {
+  // if the deltas are decimals then it is a zoom event
+  if (event.deltaX % 1 == 0 && event.deltaY % 1 == 0) {
+    panX -= event.deltaX * PAN_SENSITIVITY / zoom
+    panY -= event.deltaY * PAN_SENSITIVITY / zoom
+  }
+  else {
+    zoom *= 1 - event.delta / ZOOM_SENSITIVITY
+    zoom = max(min(zoom, 2), 1)
+  }
+
+  translationX = (panX - (window_width / 2)) * zoom + (window_width / 2);
+  translationY = (panY - (window_length / 2)) * zoom + (window_length / 2);
+}
+
 function checkCoords() {
-  let x_coord = Math.floor(mouseX / step)*step
-  let y_coord = Math.floor(mouseY / step)*step
+  var worldMousePositionX = mouseX / zoom - translationX / zoom
+  var worldMousePositionY = mouseY / zoom - translationY / zoom
+
+  let x_coord = Math.floor(worldMousePositionX / step)*step
+  let y_coord = Math.floor(worldMousePositionY / step)*step
   if (towerCoords.length <= 0) {
     walls.push([x_coord, y_coord])
-  } else if (x_coord === towerCoords[0][0] && y_coord === towerCoords[0][1]) {
-    return false
-  } else if (tower_triangle_display === false || trianCollision(mouseX, mouseY, tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5]) === false) {
+  } else if (tower_triangle_display === false || trianCollision(worldMousePositionX, worldMousePositionY, tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5]) === false) {
     walls.push([x_coord, y_coord])
-  } else if (trianCollision(mouseX, mouseY, tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5])) {
+  } else if (trianCollision(worldMousePositionX, worldMousePositionY, tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5])) {
     //click event for triangle
     bits += tower_coin_count;
     tower_triangle_display = false
@@ -118,9 +153,11 @@ function checkCoords() {
 }
 
 function keyTyped() {
+  var worldMousePositionX = mouseX / zoom - translationX / zoom
+  var worldMousePositionY = mouseY / zoom - translationY / zoom
   if (key === 't' && towerCoords.length == 0) {
-    let x_coord = Math.floor(mouseX / step)*step
-    let y_coord = Math.floor(mouseY / step)*step
+    let x_coord = Math.floor(worldMousePositionX / step)*step
+    let y_coord = Math.floor(worldMousePositionY / step)*step
     towerCoords.push([x_coord, y_coord])
     tower_center_x = towerCoords[0][0] + (step / 2);
     tower_center_y = towerCoords[0][1] + (step / 2);
