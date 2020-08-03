@@ -16,7 +16,8 @@ var walls = [];
 let bits = 50;
 let username = 'Flynn';
 let userLevel = 26;
-let diskImg;
+let bits_img;
+
 
 
 function setup() {
@@ -74,8 +75,7 @@ function draw() {
   }
   
   
-  if (tower_coin_count > 0) {
-    tower_triangle_display = true;
+  if (tower_triangle_display === true) {
     fill(78, 255, 179)
     stroke(light_blue)
     triangle(tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5])
@@ -103,10 +103,16 @@ function checkCoords() {
   let y_coord = Math.floor(mouseY / step)*step
   if (towerCoords.length <= 0) {
     walls.push([x_coord, y_coord])
+  } else if (x_coord === towerCoords[0][0] && y_coord === towerCoords[0][1]) {
+    return false
   } else if (tower_triangle_display === false || trianCollision(mouseX, mouseY, tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5]) === false) {
     walls.push([x_coord, y_coord])
   } else if (trianCollision(mouseX, mouseY, tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5])) {
     //click event for triangle
+    bits += tower_coin_count;
+    tower_triangle_display = false
+    tower_coin_count = 0
+    console.log("collecting bits")
   }
   return false
 }
@@ -120,6 +126,7 @@ function keyTyped() {
     tower_center_y = towerCoords[0][1] + (step / 2);
     tower_triangle_coords = [tower_center_x, tower_center_y, tower_center_x-15, tower_center_y-25, tower_center_x+15, tower_center_y-25];
   } else if (key === 'b') {
+    tower_triangle_display = true
     let tower_x = towerCoords[0][0];
     let tower_y = towerCoords[0][1];
     tower_coin_count += 1;
