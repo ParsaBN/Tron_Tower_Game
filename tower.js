@@ -1,11 +1,14 @@
-export default class Tower {
-    cosntructor(playerName, towerCoords) {
-        this.towerName = playerName,
-        this.coords = towerCoords
+class Tower {
+    constructor(playerName, towerCoords, towerTriangleCoords, triangleDisplay, towerCoinCount) {
+        this.towerName = playerName;
+        this.towerCoords = towerCoords;
+        this.towerTriangleCoords = towerTriangleCoords;
+        this.triangleDisplay = triangleDisplay;
+        this.towerCoinCount = towerCoinCount
     }
 
     income () {
-        bits = 50;
+        bits = 5;
         return bits
     }
 

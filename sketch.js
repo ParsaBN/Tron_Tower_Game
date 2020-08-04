@@ -1,17 +1,14 @@
+
 let window_width = 1000;
 let window_length = 500;
 let step = 20;
 var value = 0;
 
-var towerCoords = [];
-var tower_coin_count = 0;
-let tower_center_x;
-let tower_center_y;
-var tower_triangle_coords;
-var tower_triangle_display = false;
+let user_tower;
+let opponents_towers = []; // I dunno if this shuold be here or if it'll be in the server side code, but won't need it anytime soon
 
 var walls = [];
-let bits = 50;
+let bits = 0;
 let username = 'Flynn';
 let userLevel = 26;
 let bits_img;
@@ -36,7 +33,6 @@ function setup() {
 }
 
 function draw() {
-  var tower_triangle = towerCoords > 0 ? triangle(tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5]) : null;
   let highlight_orange = color(255, 204, 0);
   let neon_blue = color(80,90,255);
   let neon_orange = color(255, 153, 51);
@@ -57,9 +53,9 @@ function draw() {
     line(0, j, window_width, j)
   }
 
-  if (towerCoords.length > 0) {
+  if (user_tower) {
     fill(neon_orange);
-    rect(towerCoords[0][0], towerCoords[0][1], step, step)
+    rect(user_tower.towerCoords[0], user_tower.towerCoords[1], step, step)
   }
 
   for (var i=0; i < walls.length; i++) {
@@ -74,18 +70,18 @@ function draw() {
   var y_coord = Math.floor(worldMousePositionY / step)*step
   fill(highlight_orange);
 
-  if (towerCoords.length <= 0) {
+  if (!user_tower) {
     rect(x_coord, y_coord, step, step)
   } else {
-    if (tower_triangle_display === false) {
+    if (!user_tower.triangleDisplay) {
       rect(x_coord, y_coord, step, step)
     } else {
-      if (trianCollision(worldMousePositionX, worldMousePositionY, tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5]) === false) {
+      if (trianCollision(worldMousePositionX, worldMousePositionY, user_tower.towerTriangleCoords[0], user_tower.towerTriangleCoords[1], user_tower.towerTriangleCoords[2], user_tower.towerTriangleCoords[3], user_tower.towerTriangleCoords[4], user_tower.towerTriangleCoords[5]) === false) {
         rect(x_coord, y_coord, step, step)
       } else {
         strokeWeight(4);
         stroke(247, 255, 0);
-        triangle(tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5]);
+        triangle(user_tower.towerTriangleCoords[0], user_tower.towerTriangleCoords[1], user_tower.towerTriangleCoords[2], user_tower.towerTriangleCoords[3], user_tower.towerTriangleCoords[4], user_tower.towerTriangleCoords[5]);
         strokeWeight(0.5)
         stroke(255)
       }
@@ -93,13 +89,14 @@ function draw() {
   }
   
   
-  if (tower_triangle_display === true) {
+  if (user_tower && user_tower.triangleDisplay === true) {
     fill(78, 255, 179)
     stroke(light_blue)
-    triangle(tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5])
+    triangle(user_tower.towerTriangleCoords[0], user_tower.towerTriangleCoords[1], user_tower.towerTriangleCoords[2], user_tower.towerTriangleCoords[3], user_tower.towerTriangleCoords[4], user_tower.towerTriangleCoords[5])
   }
 
-  pop()
+  pop();
+  // UI menu
   fill(0);
   stroke(255);
   strokeWeight(2);
@@ -138,15 +135,15 @@ function checkCoords() {
 
   let x_coord = Math.floor(worldMousePositionX / step)*step
   let y_coord = Math.floor(worldMousePositionY / step)*step
-  if (towerCoords.length <= 0) {
+  if (!user_tower) {
     walls.push([x_coord, y_coord])
-  } else if (tower_triangle_display === false || trianCollision(worldMousePositionX, worldMousePositionY, tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5]) === false) {
+  } else if (user_tower.triangleDisplay === false || trianCollision(worldMousePositionX, worldMousePositionY, user_tower.towerTriangleCoords[0], user_tower.towerTriangleCoords[1], user_tower.towerTriangleCoords[2], user_tower.towerTriangleCoords[3], user_tower.towerTriangleCoords[4], user_tower.towerTriangleCoords[5]) === false) {
     walls.push([x_coord, y_coord])
-  } else if (trianCollision(worldMousePositionX, worldMousePositionY, tower_triangle_coords[0], tower_triangle_coords[1], tower_triangle_coords[2], tower_triangle_coords[3], tower_triangle_coords[4], tower_triangle_coords[5])) {
+  } else if (trianCollision(worldMousePositionX, worldMousePositionY, user_tower.towerTriangleCoords[0], user_tower.towerTriangleCoords[1], user_tower.towerTriangleCoords[2], user_tower.towerTriangleCoords[3], user_tower.towerTriangleCoords[4], user_tower.towerTriangleCoords[5])) {
     //click event for triangle
-    bits += tower_coin_count;
-    tower_triangle_display = false
-    tower_coin_count = 0
+    bits += user_tower.towerCoinCount;
+    user_tower.triangleDisplay = false
+    user_tower.towerCoinCount = 0
     console.log("collecting bits")
   }
   return false
@@ -155,21 +152,29 @@ function checkCoords() {
 function keyTyped() {
   var worldMousePositionX = mouseX / zoom - translationX / zoom
   var worldMousePositionY = mouseY / zoom - translationY / zoom
-  if (key === 't' && towerCoords.length == 0) {
+  if (key === 't' && !user_tower) {
     let x_coord = Math.floor(worldMousePositionX / step)*step
     let y_coord = Math.floor(worldMousePositionY / step)*step
-    towerCoords.push([x_coord, y_coord])
-    tower_center_x = towerCoords[0][0] + (step / 2);
-    tower_center_y = towerCoords[0][1] + (step / 2);
-    tower_triangle_coords = [tower_center_x, tower_center_y, tower_center_x-15, tower_center_y-25, tower_center_x+15, tower_center_y-25];
-  } else if (key === 'b') {
-    tower_triangle_display = true
-    let tower_x = towerCoords[0][0];
-    let tower_y = towerCoords[0][1];
-    tower_coin_count += 1;
+    let tower_center_x = x_coord + (step / 2);
+    let tower_center_y = y_coord + (step / 2);
+    user_tower = new Tower(username, [x_coord, y_coord], [tower_center_x, tower_center_y, tower_center_x-15, tower_center_y-25, tower_center_x+15, tower_center_y-25], false, 0)
   }
   return false
-}
+} 
+
+
+(function tower_bit_generation(){
+  if (user_tower) {
+    user_tower.towerCoinCount += 1
+    user_tower.triangleDisplay = true
+  }
+  setTimeout(tower_bit_generation, 10000);
+})();
+
+
+
+
+
 
 function trianCollision(px, py, x1, y1, x2, y2, x3, y3) {
 
